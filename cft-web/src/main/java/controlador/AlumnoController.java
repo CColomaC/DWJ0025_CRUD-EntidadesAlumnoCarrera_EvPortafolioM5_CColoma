@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import modelo.Alumno;
+import modelo.Carrera;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -20,12 +21,27 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import dao.AlumnoDAO;
+import dao.AlumnoDAOImp;
+import dao.CarreraDAO;
+import dao.CarreraDAOImp;
+
 public class AlumnoController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	
+	private CarreraDAO carreraDAO;
+	private AlumnoDAO alumnoDAO;
 
     public AlumnoController() {
         super();
     }
+    
+	@Override
+	public void init() throws ServletException {
+		super.init();
+		this.carreraDAO = new CarreraDAOImp();
+		this.alumnoDAO = new AlumnoDAOImp( this.carreraDAO );
+	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String accion = request.getParameter("accion");
@@ -34,7 +50,7 @@ public class AlumnoController extends HttpServlet {
 			case "eliminar":
 				try {
 					int alumnoId = Integer.parseInt( request.getParameter("id") );
-					eliminarAlumno( alumnoId );
+					alumnoDAO.borrarAlumno(alumnoId);
 					response.sendRedirect("/cft-web/AlumnoController?accion=listar");
 				} catch (SQLException sqle) {
 					sqle.printStackTrace();
@@ -47,7 +63,9 @@ public class AlumnoController extends HttpServlet {
 			case "editar":
 				try {
 					int alumnoId = Integer.parseInt( request.getParameter("id") );
-					Alumno alumno = getAlumnoById( alumnoId );
+					List<Carrera> carreras = carreraDAO.findAllCarreras();					
+					request.setAttribute("carreras", carreras);
+					Alumno alumno = alumnoDAO.findAlumnoById(alumnoId);
 					request.setAttribute("alumno", alumno);
 					vistaJSP = "/WEB-INF/jsp/vista/alumno/alumno-form.jsp";
 					request
@@ -64,6 +82,15 @@ public class AlumnoController extends HttpServlet {
 				break;
 			case "form":
 				vistaJSP = "/WEB-INF/jsp/vista/alumno/alumno-form.jsp";
+				List<Carrera> carreras = null;
+				try {
+					carreras = carreraDAO.findAllCarreras();
+				} catch(Exception e) {
+					e.printStackTrace();
+					response.sendError(500);
+					return;
+				}
+				request.setAttribute("carreras", carreras);
 				request
 					.getRequestDispatcher(vistaJSP)
 					.forward(request, response)
@@ -71,7 +98,7 @@ public class AlumnoController extends HttpServlet {
 				break;
 			case "listar":
 				try {
-					List<Alumno> alumnos = getAlumnos();
+					List<Alumno> alumnos = alumnoDAO.findAllAlumnos();
 					request.setAttribute("alumnos", alumnos);
 					vistaJSP = "/WEB-INF/jsp/vista/alumno/alumno-listado.jsp";
 					request
@@ -92,21 +119,30 @@ public class AlumnoController extends HttpServlet {
 		try {
 			id = Integer.parseInt( request.getParameter("id") );
 		} catch (NumberFormatException e) {
-			System.err.println("id se setea a 0 de manera autom·tica.");
+			System.err.println("id se setea a 0 de manera autom√°tica.");
 		}
 		
-		String nombre 	= request.getParameter("nombre");
-		String carrera 	= request.getParameter("carrera");
-		// al servlet le llega el par·metro como string 
+		String nombre 		= request.getParameter("nombre");
+		Carrera carrera 	= null;
+		try {
+			int carreraId 	= Integer.parseInt( request.getParameter("carrera_id") );
+			carrera 		= carreraDAO.findCarreraById(carreraId);	
+		} catch (SQLException | NamingException e) {
+			e.printStackTrace();
+			response.sendError(500);
+			return;
+		}
+		
+		// al servlet le llega el par√°metro como string 
 		// el control input[date] de HTML5 devuelve el string en formato ISO8601 (yyyy-mm-dd) 
-		// asÌ que debemos parsear ese string para convertir en una fecha de Java 
+		// as√≠ que debemos parsear ese string para convertir en una fecha de Java 
 		LocalDate fechaNacimiento = LocalDate.parse( request.getParameter("nacimiento") ) ;
 		
 		if(id == 0) {
 			// crear el alumno 
 			Alumno alumnoNuevo = new Alumno(nombre, carrera, fechaNacimiento);
 			try {
-				crearAlumno(alumnoNuevo);
+				alumnoDAO.crearAlumno(alumnoNuevo);
 				response.sendRedirect("/cft-web/AlumnoController?accion=listar");
 			} catch (SQLException | NamingException e) {				
 				e.printStackTrace();
@@ -116,101 +152,13 @@ public class AlumnoController extends HttpServlet {
 			// editar
 			Alumno alumnoAEditar = new Alumno(id, nombre, carrera, fechaNacimiento);
 			try {
-				editarAlumno(alumnoAEditar);
+				alumnoDAO.editarAlumno(alumnoAEditar);
 				response.sendRedirect("/cft-web/AlumnoController?accion=listar");
 			} catch (SQLException | NamingException e) {
 				e.printStackTrace();
 				response.sendError(500);
 			}
 		}
-	}
+	}	
 	
-	public Connection getConexion() throws NamingException, SQLException {
-		InitialContext contextoInicial = new InitialContext();
-		DataSource dataSource = (DataSource) contextoInicial.lookup("java:comp/env/jdbc/postgres");
-		return dataSource.getConnection();
-	}
-	
-	public Alumno getAlumnoById(int alumnoId) throws SQLException, NamingException {
-		try (
-			Connection conexion = getConexion();
-			PreparedStatement declaracion = conexion.prepareStatement("SELECT * FROM alumnos WHERE id = ?");
-		) {
-			declaracion.setInt(1, alumnoId);
-			ResultSet rs = declaracion.executeQuery();
-			if(rs.next()) {
-				int id = rs.getInt("id");
-				String nombre = rs.getString("nombre");
-				String carrera = rs.getString("carrera");
-				LocalDate fechaNacimiento = rs.getObject("fecha_nacimiento", LocalDate.class);
-				return new Alumno(id, nombre, carrera, fechaNacimiento);
-			} else {
-				return null;
-			}
-		}	
-	}
-	
-	
-	public void eliminarAlumno(int alumnoId) throws SQLException, NamingException {
-		try (
-			Connection conexion = getConexion();
-			PreparedStatement declaracion = conexion.prepareStatement("DELETE FROM alumnos WHERE id = ?");
-		) {
-			declaracion.setInt(1, alumnoId);
-			int filasEliminadas = declaracion.executeUpdate();
-		}	
-	}
-	
-	public void editarAlumno(Alumno alumno) throws SQLException, NamingException {
-		String sql = "UPDATE alumnos"
-				+" SET nombre = ?, carrera = ?, fecha_nacimiento = ?"
-				+" WHERE id = ?";
-		try (
-			Connection conexion = getConexion();
-			PreparedStatement declaracion = conexion.prepareStatement(sql);
-		) {
-			declaracion.setString(1, alumno.getNombre());
-			declaracion.setString(2, alumno.getCarrera());
-			declaracion.setObject(3, alumno.getFechaNacimiento());
-			declaracion.setInt(4, alumno.getId());
-			declaracion.executeUpdate();
-		}	
-	}
-		
-	// Trae todos los alumnos desde la BD 
-	public List<Alumno> getAlumnos() throws SQLException, NamingException {
-		try (
-			Connection conexion = getConexion();
-			Statement declaracion = conexion.createStatement();
-		) {			
-			ResultSet rs = declaracion.executeQuery("SELECT * FROM alumnos");
-			List<Alumno> alumnos = new ArrayList<>();
-			while(rs.next()) {
-				// recuperar a variables datos de la tabla 
-				int id = rs.getInt("id");
-				String nombre = rs.getString("nombre");
-				String carrera = rs.getString("carrera");
-				LocalDate fechaNacimiento = rs.getObject("fecha_nacimiento", LocalDate.class);
-				// instanciar objeto alumno 
-				Alumno alumno = new Alumno(id, nombre, carrera, fechaNacimiento);
-				// agregar a la lista
-				alumnos.add(alumno);
-			}
-			return alumnos;
-		}	
-	}
-	
-	public void crearAlumno(Alumno alumno) throws SQLException, NamingException {
-		String sql = "INSERT INTO alumnos(nombre, carrera, fecha_nacimiento) VALUES(?, ?, ?)";
-		try (
-			Connection conexion = getConexion();
-			PreparedStatement declaracion = conexion.prepareStatement(sql);
-		) {
-			declaracion.setString(1, alumno.getNombre());
-			declaracion.setString(2, alumno.getCarrera());
-			declaracion.setObject(3, alumno.getFechaNacimiento());
-			int filasInsertadas = declaracion.executeUpdate();
-		}		
-	}
-
 }
