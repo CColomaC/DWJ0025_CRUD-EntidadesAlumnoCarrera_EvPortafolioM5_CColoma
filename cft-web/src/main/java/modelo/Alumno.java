@@ -6,20 +6,20 @@ public class Alumno {
 	// ATRIBUTOS O PROPIEDADES O VARIABLES DE INSTANCIA 
 	private int id;
 	private String nombre;
-	private String carrera;
+	private Carrera carrera;
 	private LocalDate fechaNacimiento;
 		
 	// CONSTRUCTORES 
 	public Alumno() {
 	}
 
-	public Alumno(String nombre, String carrera, LocalDate fechaNacimiento) {
+	public Alumno(String nombre, Carrera carrera, LocalDate fechaNacimiento) {
 		this.nombre = nombre;
 		this.carrera = carrera;
 		this.fechaNacimiento = fechaNacimiento;
 	}
 	
-	public Alumno(int id, String nombre, String carrera, LocalDate fechaNacimiento) {
+	public Alumno(int id, String nombre, Carrera carrera, LocalDate fechaNacimiento) {
 		this.id = id;
 		this.nombre = nombre;
 		this.carrera = carrera;
@@ -43,11 +43,11 @@ public class Alumno {
 		this.nombre = nombre;
 	}
 
-	public String getCarrera() {
+	public Carrera getCarrera() {
 		return carrera;
 	}
 
-	public void setCarrera(String carrera) {
+	public void setCarrera(Carrera carrera) {
 		this.carrera = carrera;
 	}
 
