@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -11,6 +11,7 @@
 		<div class="container">
 		<h1>Alumnos</h1>
 		
+		<a class="btn btn-success" href="/cft-web/AlumnoController?accion=form">Crear</a>
 		<table class="table">
 			<thead>
 				<tr>
@@ -27,7 +28,7 @@
 					<td><c:out value="${alumno.id}" /></td>
 					<td><c:out value="${alumno.nombre}" /></td>
 					<td><c:out value="${alumno.fechaNacimiento}" /></td>
-					<td><c:out value="${alumno.carrera}" /></td>
+					<td><c:out value="${alumno.carrera.nombre}" /></td>
 					<td>
 						<a href="${pageContext.request.contextPath}/AlumnoController?accion=editar&amp;id=${alumno.id}">Editar</a> <%-- contextPath en este caso es /cft-web --%>
 						<a href="${pageContext.request.contextPath}/AlumnoController?accion=eliminar&amp;id=${alumno.id}">Eliminar</a> <%-- contextPath en este caso es /cft-web --%>
@@ -38,4 +39,4 @@
 		</table>
 		</div>
 	</body>
-</html>ml>
+</html>
