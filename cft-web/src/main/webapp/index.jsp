@@ -1,5 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
 	<head>
@@ -18,6 +17,16 @@
 					Crear Alumno
 				</a>
 			</li>
+			<li>
+				<a href="/cft-web/CarreraController?accion=listar">
+					Ver Carreras
+				</a>
+			</li>
+			<li>
+				<a href="/cft-web/CarreraController?accion=form">
+					Crear Carrera
+				</a>
+			</li>
 		</ul>
 	</body>
-</html>html>
+</html>
