@@ -106,6 +106,7 @@ public class AlumnoController extends HttpServlet {
 						.forward(request, response)
 					;
 				} catch (SQLException | NamingException e) {				
+					e.printStackTrace();
 					response.sendError(500);
 				}
 				break;
