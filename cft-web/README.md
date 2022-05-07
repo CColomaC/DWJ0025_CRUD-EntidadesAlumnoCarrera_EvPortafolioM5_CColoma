@@ -30,4 +30,4 @@ DWJ0025_CRUD-EntidadesAlumnoCarrera_EvPortafolioM5_CColoma
 - (U)pdate  : POST
 - (D)elete  : GET
 
-## Proyecto en construcción, actualizado al 02_05_22
+## Proyecto terminado.
